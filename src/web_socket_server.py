@@ -1,109 +1,137 @@
-import asyncio
-import json
-import logging
-import websockets
-from bluff_python import bluff
-
-logging.basicConfig()
-
-STATE = {"value": 0}
-
-USERS = set()
+from random import shuffle
+from collections import defaultdict
 
 
-def state_event():
-    return json.dumps({"type": "state", **STATE})
+class bluff():
+
+    def __init__(self, no_of_player=0):
+        self.last_player_claiming_cards_record = ""
+        self.last_player_throw_record = "player 0"
+        self.no_of_player = no_of_player
+        self.card_on_mat = ()
+        self.player_info_json = defaultdict(object)
+        self.cards = ['AS', '2S', '3S', '4S', '5S', '6S', '7S', '8S', '9S', '10S', 'JS', 'QS', 'KS', 'AH', '2H', '3H', '4H', '5H', '6H',
+'7H', '8H', '9H', '10H', 'JH', 'QH', 'KH', 'AC', '2C', '3C', '4C', '5C', '6C', '7C', '8C', '9C', '10C', 'JC', 'QC', 'KC', 'AD',
+'2D', '3D', '4D', '5D', '6D', '7D', '8D', '9D', '10D', 'JD', 'QD', 'KD']
+
+    def shuffle_cards_fn(self, no_of_deck):
+        self.shuffle_cards = self.cards * no_of_deck
+        self.total_no_of_cards = len(self.shuffle_cards)
+        shuffle(self.shuffle_cards)
+        print('self.shuffle_cards self.shuffle_cards cnnnn', self.shuffle_cards)
+
+    def player_choice_after_distribution(self):
+        player_choice = input(
+            '\nchoose option   1.Throw cards \n\t\t2.Pick cards from mat \n\t\t3.Pass')
+        return player_choice
+
+    def card_distribution_to_player(self):
+        """
+        card_distribution_to_player is distributing the cards according to number of players
+        """
+        print('card distribution fn called')
+        no_of_card_to_single_player = int(
+            self.total_no_of_cards/self.no_of_player)
+        cards_left_after_distribution = self.total_no_of_cards % self.no_of_player
+        starting_card = 0
+        ending_card = no_of_card_to_single_player
+        for no_of_player_obj in range(self.no_of_player):
+            player = 'player {}'.format(int(no_of_player_obj)+1)
+            self.player_info_json[player]
+            list_for_card_to_individual = []
+            list_for_card_to_individual.extend(
+                self.shuffle_cards[starting_card:ending_card])
+            list_for_card_to_individual.sort()
+            starting_card += no_of_card_to_single_player
+            ending_card += no_of_card_to_single_player
+            # list_for_card_to_individual.append(cards.pop())
+            self.player_info_json[player] = {
+                'total_cards': list_for_card_to_individual}
+        return self.player_info_json
+
+    # def shuffle_cards(self):
+    # 	return shuffle(self.cards)
+
+    def pick_cards_from_mat(self, playerInfo):
+        cheating = False
+        pick_card_from_mat_list = list(self.card_on_mat)
+        prev_player_cards_record = self.last_player_claiming_cards_record.split("_")
+        print("prev_player_cards_record {}".format(prev_player_cards_record))
+        last_cards_from_mat = pick_card_from_mat_list[-int(
+        prev_player_cards_record[0]):]
+        for cards_from_mat in last_cards_from_mat:
+            print("cards_from_mat[0]  {}  prev_player_cards_record {}".format(cards_from_mat[0], prev_player_cards_record[1]))
+            if cards_from_mat[0] != prev_player_cards_record[1]:
+                cheating = True
+        if cheating:
+            self.player_info_json['{}'.format(
+                self.last_player_throw_record)]['total_cards'].extend(pick_card_from_mat_list)
+        else:
+            self.player_info_json['{}'.format(playerInfo)]['total_cards'].extend(
+                pick_card_from_mat_list)
+        print('#############################', pick_card_from_mat_list)
+        print('#############################', self.player_info_json['{}'.format(playerInfo)])
+        self.card_on_mat = ()
+        return self.player_info_json
+
+    def throw_cards(self, playerInfo,card_to_throw_from_server,claiming_cards):
+        self.last_player_claiming_cards_record = claiming_cards
+        print("playerInfo {}".format(playerInfo))
+        print("player_info_json {}".format(self.player_info_json))
+        print("card_to_throw_from_server {}".format(card_to_throw_from_server))
+        no_of_card_to_be_thrown = len(card_to_throw_from_server)
+        # no_of_card_to_be_thrown =int(input('How many card {} wants to throw'.format(playerInfo)))
+        thrown_card_list = []
+        try:
+            for card_dict in card_to_throw_from_server:
+                # get_cards=input('throw {} card'.format(create_list_of_thrown_cards+1))
+                thrown_card_list.append(card_dict["card"])
+                self.player_info_json['{}'.format(
+                    playerInfo)]['total_cards'].remove(card_dict["card"])
+                print("update crrrrdddd--------> {}".format(self.player_info_json))
+                # playerInfo['total_cards'].remove(get_cards)
+        except:
+            print('error')
+        finally:
+            self.update_cards_on_mat(thrown_card_list)
+            self.player_info_json['{}'.format(playerInfo)].update(
+                thrown_cards=thrown_card_list)
+            return self.player_info_json
+
+    def update_cards_on_mat(self, thrown_card_list):
+        self.card_on_mat += tuple(thrown_card_list)
+        print('update_cards_on_mat', self.card_on_mat)
 
 
-def users_event():
-    return json.dumps({"type": "users", "count": len(USERS)})
+# no_of_player = 4
+# no_of_deck =1
+# bluffw = bluff(no_of_player)
+# bluffw.shuffle_cards_fn(no_of_deck)
+# get_card_distribution_to_player = bluffw.card_distribution_to_player()
 
+# for k,v in get_card_distribution_to_player.items():
+#	print (f"{k} - {v}")
 
-async def notify_state():
-    if USERS:  # asyncio.wait doesn't accept an empty list
-        message = state_event()
-        await asyncio.wait([user.send(message) for user in USERS])
+# player_choice = bluffw.player_choice_after_distribution()
+# if player_choice == '1':
+#	bluffw.throw_cards(list(get_card_distribution_to_player.keys())[0])
+#	bluffw.throw_cards(list(get_card_distribution_to_player.keys())[1])
+# elif player_choice == '2':
+#	bluffw.pick_cards_from_mat(list(get_card_distribution_to_player.keys())[1])
+# else:
+#	pass
 
+    # """
+    # done
 
-async def notify_users():
-    if USERS:  # asyncio.wait doesn't accept an empty list
-        message = users_event()
-        await asyncio.wait([user.send(message) for user in USERS])
+    # 1. distribution of card
+    # 2. throw card on mat by individual
+    # 3. pickup card from mat
+    # 4. pickup card from mat by individual
+    # 5. no. of decks to be included
 
+    # to be done
+    # 1.
+    # 2.
 
-async def register(websocket):
-    USERS.add(websocket)
-    print("=========> {}".format(websocket))
-    await notify_users()
-
-
-async def unregister(websocket):
-    USERS.remove(websocket)
-    await notify_users()
-
-async def send_cards_to_client(card_to_be_distri_to_players):
-	try:
-	    await asyncio.wait([user.send(json.dumps(card_to_be_distri_to_players)) for user in USERS])
-	finally:
-		print("hello2")
-
-async def throw_cards(data,bluffw):
-	bluffw.last_player_throw_record = data["playerNumber"];
-    print("throw card calledd")
-    for k in data["thrown_cards"]:
-        print("keyyy {}".format(k))
-    result=bluffw.throw_cards(data["playerNumber"],data["thrown_cards"])
-    await send_cards_to_client(result)
-    print("result from tx bluff {}".format(result))   
-	
-async def pick_cards(data,bluffw):
-    result=bluffw.pick_cards_from_mat(data["playerNumber"])
-    print("pick_cards card calledd {}".format(result))
-    await send_cards_to_client(result)
-
-
-async def counter(websocket, path):
-    global bluffw
-    # register(websocket) sends user_event() to websocket
-    await register(websocket)
-    try:
-        await websocket.send(state_event())
-        async for message in websocket:
-            data = json.loads(message)
-            print("messagggggeeeeeeeeeeee=====> {}".format(data))
-            if data["action"] == "minus":
-                STATE["value"] -= 1
-                await notify_state()
-            elif data["action"] == "plus" and data["userType"]=="admin":
-                bluffw = bluff(len(USERS))
-                STATE["value"] += 1
-                await distribute_cards(bluffw)
-                await notify_state()
-            elif data["action"] == "throw_card":
-                await throw_cards(data,bluffw)
-            elif data["action"] == "pick_cards":
-                await pick_cards(data,bluffw)
-
-            else:
-                logging.error("unsupported event: {}".format(data))
-                #print("data------------> {}".format(data))
-    finally:
-        print("hello")
-        #await unregister(websocket)
-
-
-		#await unregister(websocket)
-
-
-	
-async def distribute_cards(bluffw):
-    no_of_deck=1
-    bluffw.shuffle_cards_fn(no_of_deck)
-    get_card_distribution_to_player = bluffw.card_distribution_to_player()
-    await send_cards_to_client(get_card_distribution_to_player)
-
-
-start_server = websockets.serve(counter, port=1234)
-
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+    # """

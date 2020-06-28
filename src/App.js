@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useReducer} from 'react';
 import useWebSocket from 'react-use-websocket';
 import './App.css';
 import './card.css'
@@ -14,7 +14,17 @@ function App() {
   const [selectedCards, setSelectedCards] = useState([]);
   const [throwCards, setThrowCards] = useState(null);
   const [playerNUmmm,setplayerNUmmm]=useState(null);
+  const [claimedCard,setClaimedCard]=useState("");
+  const [password,setPassword]=useState("");
+  const [card_to_throw,setCard_to_throw]=useState([]);
   const socket = useRef(null);
+  const [userInput, setUserInput] = useReducer(
+    (state, newState) => ({...state, ...newState}),
+  {password:"",
+claimedCard:""}
+);
+
+
   // const [socket, setsocket] = useState(new WebSocket('ws://localhost:6789'));
   // const socket = new WebSocket('ws://localhost:6789');
 
@@ -109,64 +119,12 @@ function App() {
   }, [playerNUmmm])
 
 
-  let toggleCardSelection=(cardall,cardToToggleStatus)=>{
-    let isSelectedCard=false;
-    let toggleStatus={};
-      let updatedCards=cardall.filter((ele)=>
-      {
-        // console.log("ele.cardele.card ele.card ele.card ele.cardklfjdkfs",cardToToggleStatus,ele.card);
-        if(ele.card==cardToToggleStatus)
-        { 
-          // console.log("pakdaa gaya");
-        // console.log("card to be removed",ele,cardToToggleStatus);
-          isSelectedCard = !ele.isSelected;} 
-        return ele.card!==cardToToggleStatus;
-      }
   
-      )
-      
-      // console.log("updatedCards updatedCards updatedCards",updatedCards);
-      toggleStatus = {"card": cardToToggleStatus,"isSelected":isSelectedCard};
-      // debugger;
-      setMy_cards([...updatedCards,toggleStatus] )
-     
   
-  }
-
-
-useEffect(() => {
-  if(my_cards!=null){
-    // console.log("muy scards state====>",my_cards);
-  }
-}, [my_cards])
-    
-// let findDesign=(ele)=>{
-//   let  alpha = ele.split("");
-//   if(alpha.length!==3)
-//   {
-//     console.log("--------=========ffffffff=fds===>",alpha[1]);
-//     if (alpha[1]==='C')
-//   return "clubs"
-//   else if (alpha[1]==='D')
-//   return "diams"
-//   else if (alpha[1]==='H')
-//   return "hearts"
-//   else if (alpha[1]==='S')
-//   return "spades"
-// }else{
-//     if (alpha[2]==='C')
-//   return "clubs"
-//   else if (alpha[2]==='D')
-//   return "diams"
-//   else if (alpha[2]==='H')
-//   return "hearts"
-//   else if (alpha[2]==='S')
-//   return "spades"
-//   }
-// }
-
-let getIconContent=(alpha,index,isIcon)=>{
-  if (alpha[index]==='C')
+  
+  
+  let getIconContent=(alpha,index,isIcon)=>{
+    if (alpha[index]==='C')
   return isIcon ? "♣": "clubs";
   else if (alpha[index]==='D')
   return isIcon ? "♦" : "diams";
@@ -179,9 +137,48 @@ let getIconContent=(alpha,index,isIcon)=>{
 let findDesign=(ele,isIcon)=>{
   let  alpha = ele.split("");
   if(alpha.length!==3)
-    return getIconContent(alpha,1,isIcon)
+  return getIconContent(alpha,1,isIcon)
   else
   return getIconContent(alpha,2,isIcon);
+}
+// useEffect(() => {
+//   if(card_to_throw.length!=0){
+//     setCard_to_throw(card_to_throw)
+//     // console.log("muy scards state====>",my_cards);
+// }
+// }, [card_to_throw])
+
+let helperFnToThrowCard= (sendToServer)=>{
+  let card_to_be_thrown = my_cards.filter((ele)=>
+  ele.isSelected!==false
+  )
+  if(sendToServer)
+  card_to_be_thrown.map((ele) =>    //deleting other property
+  delete ele.isSelected
+  )
+console.log("card_to_be_thrown card_to_be_thrown ",card_to_be_thrown);
+ setCard_to_throw(card_to_be_thrown)
+return card_to_be_thrown;
+}
+
+let toggleCardSelection= (cardall,cardToToggleStatus)=>{
+  let isSelectedCard=false;
+  let toggleStatus={};
+    let updatedCards=cardall.filter((ele)=>
+    {
+      if(ele.card===cardToToggleStatus)
+      { 
+        isSelectedCard = !ele.isSelected;} 
+      return ele.card!==cardToToggleStatus;
+    }
+    )
+    toggleStatus = {"card": cardToToggleStatus,"isSelected":isSelectedCard};
+     
+    setCard_to_throw([...updatedCards,toggleStatus].filter((ele)=>ele.isSelected!=false))
+    setMy_cards([...updatedCards,toggleStatus] )
+    // helperFnToThrowCard(false)
+    
+    // debugger;
 }
 
 let findno=(ele)=>{
@@ -198,54 +195,70 @@ let pickCards=()=>{
   socket.current.send(`{"action": "pick_cards","playerNumber":"${playerNUmmm}","userType":"user"}`);
 }
 
-let throwCardsfn=()=>{
-  let create_throwObject={};
-  let card_to_be_thrown = my_cards.filter((ele)=>
-  ele.isSelected!==false
-)
 
-card_to_be_thrown.map((ele)=>{   //deleting other property
-  // console.log(ele.isSelected)
-  delete ele.isSelected;
-})
-// socket.current.addEventListener('open', function (event) {
-  // console.log("call to car_to_be_thrown",card_to_be_thrown);
-  create_throwObject = {...{"action": "throw_card","playerNumber":`${playerNUmmm}`,"userType":"user"},...{"thrown_cards":card_to_be_thrown}}
-  console.log("call to nhi ho raha????",JSON.stringify(create_throwObject));
+let throwCardsfn=()=>{
+  console.log("claimrd carddddd ",userInput.claimedCard)
+  const card_to_be_thrown = helperFnToThrowCard(true);
+  const create_throwObject = {...{"action": "throw_card","playerNumber":`${playerNUmmm}`,"userType":"user"},...{"thrown_cards":card_to_be_thrown},...{"claiming":`${card_to_throw.length}_${userInput.claimedCard}`}}
+  console.log("create_throwObject ************** ",create_throwObject);
   socket.current.send(JSON.stringify(create_throwObject) );
-// }); "${JSON.stringify({"thrown_cards":car_to_be_thrown})}
+  setCard_to_throw([])
+}
+
+// let handleChange=(e)=>{
+//   console.log("e.target.value",e.target.value)
+//   setClaimedCard(e.target.value)
+// }
+
+// let handleUser=(e)=>{
+//   console.log("e.target.value",e.target.value)
+//   setPassword(e.target.value)
+// }
+let authenticateAdmin=()=>{
+  if(userInput.password==="8799717085"){
+    socket.current.send(`{"action": "plus","player":"player ${playerNumber}", "userType":"admin"}`);
+  }else if(userInput.password!==""){
+    setUserInput({["password"]: "ready_to_go"})
+  }
+  console.log("userInput.password userInput.password ",userInput.password);
+
 }
 
 
+const handleChange = evt => {
+  console.log("evt.target.value  ",evt.target.value);
+    const name = evt.target.name;
+    const newValue = evt.target.value;
+    setUserInput({[name]: newValue});}
 
 
-  return (  
-    <div className="App">
-      <h1>hello</h1>
-      <div class="playingCards fourColours rotateHand">
+
+
+return (  
+  <div className="App">
+    <h3>Hello</h3>
+      {my_cards.length===0 && userInput.password==="ready_to_go" ?<h3>You are Ready to go...!! Admin is about to start the game and cards will appear in seconds</h3>:null}
+      {my_cards.length===0 && userInput.password!=="ready_to_go"?
+      <div className="a">
+      <input type="text" value={userInput.password} name="password" onChange={handleChange}></input>
+      <button onClick={()=>authenticateAdmin()}>submit</button>
+      </div>
+      :null}
+      <div className="playingCards fourColours rotateHand">
 <ul className="hand">
       {my_cards ?my_cards.map((ele)=>{return !ele.isSelected ?  (
-
-
-        <li onClick={()=>toggleCardSelection(my_cards,ele.card)}>
+        <li onClick={()=>toggleCardSelection(my_cards,ele.card) 
+        }>
         <a className={`card rank-${findno(ele.card).isInteger ? findno(ele.card): findno(ele.card).toLowerCase()} ${findDesign(ele.card,false)}`} >
         <span class="rank">{findno(ele.card)}</span>{findDesign(ele.card,true)}<span class="suit"></span>
-                {/* <span class="rank">7</span>
-                <span class="suit">&diams;</span> */}
-            </a>
-            {/* <div className={`card rank-${findno(ele).isInteger ? findno(ele): findno(ele).toLowerCase()} ${findDesign(ele)}`}><span class="rank">{findno(ele)}</span>{findDesign2(ele)}<span class="suit"></span></div> */}
-        
+                </a>
         </li>
 		
-      ): (
+    ): (
       <li onClick={()=>toggleCardSelection(my_cards,ele.card)}>
         <a style={{bottom: "1em"}} className={`card rank-${findno(ele.card).isInteger ? findno(ele.card): findno(ele.card).toLowerCase()} ${findDesign(ele.card,false)}`} >
         <span class="rank">{findno(ele.card)}</span>{findDesign(ele.card,true)}<span class="suit"></span>
-                {/* <span class="rank">7</span>
-                <span class="suit">&diams;</span> */}
-            </a>
-            {/* <div className={`card rank-${findno(ele).isInteger ? findno(ele): findno(ele).toLowerCase()} ${findDesign(ele)}`}><span class="rank">{findno(ele)}</span>{findDesign2(ele)}<span class="suit"></span></div> */}
-        
+        </a>
         </li>
         )
       }): null}
@@ -253,7 +266,11 @@ card_to_be_thrown.map((ele)=>{   //deleting other property
 		</div>
     {my_cards.length!=0?(
     <div className="a">
-    <button onClick={()=>throwCardsfn()}>Throw</button>
+      <label>Claim to throw card</label>
+      {card_to_throw.length!==0?<h3>Total card selected {card_to_throw.length}</h3>:null}
+      <input type="text" value={userInput.claimedCard} name="claimedCard" onChange={handleChange}></input>
+      {card_to_throw.length!==0?<button onClick={()=>throwCardsfn()}>Throw</button>:null}
+    
     <button onClick={()=>pickCards()}>Pick cards</button>
     </div>
     ):null}
