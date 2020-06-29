@@ -474,6 +474,8 @@
     padding: 0;
     list-style-type: none;
     float: left;
+    border: solid 1px royalblue; 
+    /* by akhil */
 }
 
 .playingCards ul.hand,

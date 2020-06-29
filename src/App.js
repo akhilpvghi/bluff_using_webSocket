@@ -221,7 +221,7 @@ return (
       :null}
        <h3>{serverMessageFromBluff}</h3>
       <div className="playingCards fourColours rotateHand">
-<ul className="hand">
+<ul className="table">
       {my_cards ?my_cards.map((ele)=>{return !ele.isSelected ?  (
         
         <li onClick={()=>toggleCardSelection(ele.card) 
@@ -233,7 +233,8 @@ return (
     ): (
      
       <li onClick={()=>toggleCardSelection(ele.card)}>
-        <a style={{bottom: "1em"}} className={`card rank-${findno(ele.card).isInteger ? findno(ele.card): findno(ele.card).toLowerCase()} ${findDesign(ele.card,false)}`} >
+        <a style={{bottom: "1em",
+      backgroundColor: "paleturquoise"}} className={`card rank-${findno(ele.card).isInteger ? findno(ele.card): findno(ele.card).toLowerCase()} ${findDesign(ele.card,false)}`} >
         <span class="rank">{findno(ele.card)}</span>{findDesign(ele.card,true)}<span class="suit"></span>
         </a>
         </li>
