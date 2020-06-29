@@ -14,6 +14,7 @@ function App() {
   const [my_cards, setMy_cards] = useState([]);
   const [playerIdentity, setPlayerIdentity] = useState(null);
   const [card_to_throw, setCard_to_throw] = useState([]);
+  const [serverMessageFromBluff, setServerMessageFromBluff] = useState("");
 
   const socket = useRef(null);
   const [userInput, setUserInput] = useReducer(
@@ -27,16 +28,14 @@ function App() {
   );
 
 
-  let playerNumber = 0;
-
+  
   useEffect(() => {
+    let playerNumber = 0;
     console.log('creating one time socket');
     socket.current = new WebSocket(`ws://${window.location.href.split('//')[1].split(':')[0]}:1234`);
     socket.current.onopen = () => console.log("ws opened");
-
     socket.current.addEventListener('message', function (event) {
-      // console.log('Message from server ', event.data);
-      if (JSON.parse(event.data).type == "users") {
+      if (JSON.parse(event.data).type === "users") {
         playerNumber = JSON.parse(event.data).count;
         console.log("client is listening playerNumber playerNumber", playerNumber);
         setPlayerIdentity(`player ${playerNumber}`);
@@ -56,18 +55,19 @@ function App() {
 
       socket.current.addEventListener('message', function (event) {
         let card_status;
-        const all_cards = JSON.parse(event.data.split("Message from server")[0]);
-        // console.log("playerNum playerNum playerNum",playerNUmmm)
-        if (event.data.split("Message from server")[0].includes("player")) {
+        if(event.data.includes("player")){
+        const all_cards = JSON.parse(event.data);
+        console.log("ACTUAL DATA FROM SERVER",event.data);
+          setServerMessageFromBluff(all_cards["serverMessageFromBluff"])
           setMy_cards([])                   //=================>to set new cards from starting
           const my_card = Object.entries(all_cards).filter(([key, val]) => {
-              // console.log("player ",key ,"its card",val);
-              return key == playerIdentity
+              return key === playerIdentity
             }
 
           );
-          // console.log("my_card my_card my_card",my_card);
-          my_card[0][1]["total_cards"].map((card) => {
+          console.log("ACTUAL DATA FROM SERVER 2",my_card);
+          if(my_card.length!==0)
+          my_card[0][1]['total_cards'].map((card) => {
             card_status = {
               "card": card,
               "isSelected": false
@@ -75,7 +75,7 @@ function App() {
             console.log(`LOG 1 ===> total card coming for current player ${JSON.stringify(card_status)}`)
             setMy_cards(data => [...data, card_status])
           })
-        }
+          }
 
       })
 
@@ -110,13 +110,7 @@ function App() {
     else
       return getIconContent(alpha, 2, isIcon);
     }
-    // useEffect(() => {
-    //   if(card_to_throw.length!=0){
-    //     setCard_to_throw(card_to_throw)
-    //     // console.log("muy scards state====>",my_cards);
-    // }
-    // }, [card_to_throw])
-      
+
   let helperFnToThrowCard = () => {
     let card_to_be_thrown = my_cards.filter((ele) =>
       ele.isSelected !== false
@@ -144,11 +138,8 @@ function App() {
       "isSelected": isSelectedCard
     };
 
-    // helperFnToThrowCard()
     setMy_cards([...updatedCards, toggleStatus])
-    setCard_to_throw([...updatedCards, toggleStatus].filter((ele) => ele.isSelected != false))
-
-    // debugger;
+    setCard_to_throw([...updatedCards, toggleStatus].filter((ele) => ele.isSelected !== false))
   }
 
   let findno = (ele) => {
@@ -161,7 +152,7 @@ function App() {
   }
 
   let pickCards = () => {
-    socket.current.send(`{"action": "pick_cards","playerNumber":"${playerIdentity}","userType":"user"}`);
+    socket.current.send(`{"action": "pick_cards","playerNumber":"${playerIdentity}","userType":"user","userName":"${userInput.userName}"}`);
   }
 
 
@@ -178,7 +169,8 @@ function App() {
       },
       ...{
         "claiming": `${card_to_throw.length}_${userInput.claimedCard}`
-      }
+      },
+      ...{"userName":`${userInput.userName}`}
     }
     // console.log("create_throwObject ************** ",create_throwObject);
     setCard_to_throw([])
@@ -188,7 +180,7 @@ function App() {
 
   let authenticateAdmin = () => {
     if (userInput.userName === "8799717085" && playerIdentity != null) {
-      // setUserInput({["userName"]: "Akhil"})
+      setUserInput({["userName"]: "Akhil"})
       socket.current.send(`{"action": "plus","playerNumber":"${playerIdentity}","userType":"admin","userName":"Akhil"}`);
       setUserInput({
         ["status"]: "ready_to_go"
@@ -227,17 +219,19 @@ return (
       <button onClick={()=>authenticateAdmin()}>submit</button>
       </div>
       :null}
+       <h3>{serverMessageFromBluff}</h3>
       <div className="playingCards fourColours rotateHand">
 <ul className="hand">
       {my_cards ?my_cards.map((ele)=>{return !ele.isSelected ?  (
+        
         <li onClick={()=>toggleCardSelection(ele.card) 
         }>
         <a className={`card rank-${findno(ele.card).isInteger ? findno(ele.card): findno(ele.card).toLowerCase()} ${findDesign(ele.card,false)}`} >
         <span class="rank">{findno(ele.card)}</span>{findDesign(ele.card,true)}<span class="suit"></span>
                 </a>
         </li>
-		
     ): (
+     
       <li onClick={()=>toggleCardSelection(ele.card)}>
         <a style={{bottom: "1em"}} className={`card rank-${findno(ele.card).isInteger ? findno(ele.card): findno(ele.card).toLowerCase()} ${findDesign(ele.card,false)}`} >
         <span class="rank">{findno(ele.card)}</span>{findDesign(ele.card,true)}<span class="suit"></span>

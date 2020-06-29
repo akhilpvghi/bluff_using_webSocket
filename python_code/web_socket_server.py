@@ -49,15 +49,19 @@ async def send_cards_to_client(card_to_be_distri_to_players):
 
 async def throw_cards(data,bluffw):
     print("throw card calledd")
+    userName=data["userName"]
+    if userName=="":
+        userName=data["playerNumber"]
     bluffw.last_player_throw_record = data["playerNumber"]
+    bluffw.last_player_name_throw_record = userName
     for k in data["thrown_cards"]:
         print("thrown cards {}".format(k))
-    result=bluffw.throw_cards(data["playerNumber"],data["thrown_cards"],data["claiming"])
+    result=bluffw.throw_cards(data["playerNumber"],data["thrown_cards"],data["claiming"],data["userName"])
     await send_cards_to_client(result)
     #print("result from tx bluff {}".format(result))   
 	
 async def pick_cards(data,bluffw):
-    result=bluffw.pick_cards_from_mat(data["playerNumber"])
+    result=bluffw.pick_cards_from_mat(data["playerNumber"],data["userName"])
     #print("pick_cards card calledd {}".format(result))
     await send_cards_to_client(result)
 

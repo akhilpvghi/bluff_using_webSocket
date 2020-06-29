@@ -7,6 +7,7 @@ class bluff():
     def __init__(self, no_of_player=0):
         self.last_player_claiming_cards_record = ""
         self.last_player_throw_record = "player 0"
+        self.last_player_name_throw_record = "player 0"
         self.no_of_player = no_of_player
         self.card_on_mat = ()
         self.player_info_json = defaultdict(object)
@@ -52,7 +53,9 @@ class bluff():
     # def shuffle_cards(self):
     # 	return shuffle(self.cards)
 
-    def pick_cards_from_mat(self, playerInfo):
+    def pick_cards_from_mat(self, playerInfo, userName):
+        if userName=="":
+            userName=playerInfo
         cheating = False
         pick_card_from_mat_list = list(self.card_on_mat)
         prev_player_cards_record = self.last_player_claiming_cards_record.split("_")
@@ -66,17 +69,19 @@ class bluff():
         if cheating:
             self.player_info_json['{}'.format(
                 self.last_player_throw_record)]['total_cards'].extend(pick_card_from_mat_list)
-            #self.player_info_json["serverMessageFromBluff"]="{} caught {} as {} was bluffing".format(playerInfo,self.last_player_throw_record,self.last_player_throw_record)
+            self.player_info_json["serverMessageFromBluff"]="{} caught {} as {} was bluffing".format(userName,self.last_player_name_throw_record,self.last_player_name_throw_record)
         else:
             self.player_info_json['{}'.format(playerInfo)]['total_cards'].extend(pick_card_from_mat_list)
-            #self.player_info_json["serverMessageFromBluff"]="{} got {} to pick all cards from MAT".format(self.last_player_throw_record,playerInfo)
+            self.player_info_json["serverMessageFromBluff"]="{} got {} to pick all cards from MAT".format(self.last_player_name_throw_record,userName)
         
         print('#############################', pick_card_from_mat_list)
         print('#############################', self.player_info_json['{}'.format(playerInfo)])
         self.card_on_mat = ()
         return self.player_info_json
 
-    def throw_cards(self, playerInfo,card_to_throw_from_server,claiming_cards):
+    def throw_cards(self, playerInfo,card_to_throw_from_server,claiming_cards,userName):
+        if userName=="":
+            userName=playerInfo
         self.last_player_claiming_cards_record = claiming_cards
         print("playerInfo {}".format(playerInfo))
         print("player_info_json {}".format(self.player_info_json))
@@ -92,7 +97,7 @@ class bluff():
                     playerInfo)]['total_cards'].remove(card_dict["card"])
                 print("update crrrrdddd--------> {}".format(self.player_info_json))
                 # playerInfo['total_cards'].remove(get_cards)
-            #self.player_info_json["serverMessageFromBluff"]="{} has thrown {} cards".format(playerInfo,len(thrown_card_list))
+            self.player_info_json["serverMessageFromBluff"]="{} has thrown {} cards".format(userName,len(thrown_card_list))
         
         except:
             print('error')
