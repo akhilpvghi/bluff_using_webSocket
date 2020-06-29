@@ -66,9 +66,11 @@ class bluff():
         if cheating:
             self.player_info_json['{}'.format(
                 self.last_player_throw_record)]['total_cards'].extend(pick_card_from_mat_list)
+            #self.player_info_json["serverMessageFromBluff"]="{} caught {} as {} was bluffing".format(playerInfo,self.last_player_throw_record,self.last_player_throw_record)
         else:
-            self.player_info_json['{}'.format(playerInfo)]['total_cards'].extend(
-                pick_card_from_mat_list)
+            self.player_info_json['{}'.format(playerInfo)]['total_cards'].extend(pick_card_from_mat_list)
+            #self.player_info_json["serverMessageFromBluff"]="{} got {} to pick all cards from MAT".format(self.last_player_throw_record,playerInfo)
+        
         print('#############################', pick_card_from_mat_list)
         print('#############################', self.player_info_json['{}'.format(playerInfo)])
         self.card_on_mat = ()
@@ -90,6 +92,8 @@ class bluff():
                     playerInfo)]['total_cards'].remove(card_dict["card"])
                 print("update crrrrdddd--------> {}".format(self.player_info_json))
                 # playerInfo['total_cards'].remove(get_cards)
+            #self.player_info_json["serverMessageFromBluff"]="{} has thrown {} cards".format(playerInfo,len(thrown_card_list))
+        
         except:
             print('error')
         finally:

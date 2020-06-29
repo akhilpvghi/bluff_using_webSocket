@@ -1,0 +1,92 @@
+
+	 <style>
+	 </style>
+
+	 
+	 <html>
+		<meta>
+<script
+  src="https://code.jquery.com/jquery-3.5.1.js"
+  integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
+  crossorigin="anonymous"></script>
+  <link rel="stylesheet" type="text/css" href="cards.css" media="screen" />
+		</meta>
+	 <body>
+
+	 
+	 </div>
+<ul class="table">
+        <li>
+            <div class="card rank-2 clubs"><span class="rank">2</span><span class="suit">&clubs;</span></div>
+        </li>
+		</ul>
+
+		<button id="btnIDfor_pass" onclick=plus('admin')>Pass</button>
+		<button id="btnIDfor_pass">Pick</button>
+		<button id="btnIDfor_pass">Throw</button>
+
+		
+	 </body>
+
+	 <script type="text/javascript">
+
+	 let playerNumber=0;
+let playerNum;
+	let count=0;
+
+let processMessage= (event)=> {
+    console.log('Message from server ', event.data);
+	if(JSON.parse(event.data).type=="users")
+	if(count==0)
+		{playerNumber = JSON.parse(event.data).count
+	console.log("client is listening playerNumber playerNumber",playerNumber);
+     playerNum =  `player ${playerNumber}`;
+	}
+}
+		 const socket = new WebSocket('ws://localhost:1234');
+
+		 socket.addEventListener('message', function (event) {
+    console.log('Message from server ', event.data);
+	if(JSON.parse(event.data).type=="users")
+	if(count==0)
+		{playerNumber = JSON.parse(event.data).count
+	console.log("client is listening playerNumber playerNumber",playerNumber);
+     playerNum =  `player ${playerNumber}`;
+	}},{once: true})
+
+
+	socket.addEventListener('open', function (event) {
+		console.log("client is listening ");
+});
+
+
+const callback=()=>{
+    socket.send(`{"action": "plus","player":"player ${playerNumber}", "userType":"admin"}`);
+	console.log("see 1")
+}
+
+const showMycard=(admin)=>{
+	callback()
+	socket.addEventListener('message', function (event) {
+		console.log("------------------->",event.data.split("Message from server")[0]);
+		const all_cards = JSON.parse(event.data.split("Message from server")[0]);
+		const my_cards = Object.entries(all_cards).filter(([key,val])=>key==playerNum)
+		console.log("my cardssssssss======>",my_cards,playerNum);
+		document.write(JSON.stringify(my_cards));
+	}
+	)
+}
+
+const plus=(admin)=>{
+	showMycard(admin);
+}
+		// Listen for messages
+		
+		
+
+	// Connection opened
+	//console.log("akhil")
+	
+	 
+	 </script>
+	 </html>
