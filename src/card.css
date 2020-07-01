@@ -10,6 +10,39 @@
 /* card itself
 ********************************************************************/
 
+
+.blinking{
+    animation:blinkingText 1.2s infinite;
+    font-weight: 900;
+    margin-left: 37px;
+    margin-top: -17px;
+}
+@keyframes blinkingText{
+    0%{     color: rgb(0, 0,255);    }
+    49%{    color: rgb(0, 0,255);; }
+    60%{    color: transparent; }
+    99%{    color:transparent;  }
+    100%{   color: rgb(0, 0,255);;    }
+}
+
+.blinkingGreen{
+    animation:blinkingTextGreen 1.2s infinite;
+    font-weight: 900;
+    margin-left: 37px;
+    margin-top: -17px;
+}
+@keyframes blinkingTextGreen{
+    0%{     color: rgb(0,255, 0);    }
+    49%{    color: rgb(0, 255, 0);; }
+    60%{    color: transparent; }
+    99%{    color:transparent;  }
+    100%{   color: rgb(0, 255, 0);;    }
+}
+
+/* h.addIner.blinking {
+   
+} */
+
 .playingCards .card {
     display: inline-block;
     width: 3.3em;
@@ -30,6 +63,9 @@
     -moz-box-shadow: .2em .2em .5em #333;
     -webkit-box-shadow: .2em .2em .5em #333;
     box-shadow: .2em .2em .5em #333;
+}
+.mt-3 {
+    margin-top: 3em;
 }
 
 .playingCards a.card {

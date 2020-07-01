@@ -4,9 +4,9 @@ import React, {
   useRef,
   useReducer
 } from 'react';
-import useWebSocket from 'react-use-websocket';
 import './App.css';
 import './card.css'
+import Select from "react-select";
 
 
 function App() {
@@ -15,7 +15,8 @@ function App() {
   const [playerIdentity, setPlayerIdentity] = useState(null);
   const [card_to_throw, setCard_to_throw] = useState([]);
   const [serverMessageFromBluff, setServerMessageFromBluff] = useState("");
-
+  const [currentPlayerInAction, setCurrentPlayerInAction] = useState("");
+  const [timeCount, setTimeCount] = useState(10);
   const socket = useRef(null);
   const [userInput, setUserInput] = useReducer(
     (state, newState) => ({
@@ -23,7 +24,7 @@ function App() {
       ...newState
     }), {
       userName: "",
-      claimedCard: ""
+      claimedCard: {}
     }
   );
 
@@ -56,10 +57,16 @@ function App() {
       socket.current.addEventListener('message', function (event) {
         let card_status;
         if(event.data.includes("player")){
+          setTimeCount(setInterval((ele)=>{
+            return ele
+          },1000))      //=================>to set new cards from starting
         const all_cards = JSON.parse(event.data);
         console.log("ACTUAL DATA FROM SERVER",event.data);
-          setServerMessageFromBluff(all_cards["serverMessageFromBluff"])
-          setMy_cards([])                   //=================>to set new cards from starting
+          setServerMessageFromBluff(all_cards["serverMessageFromBluff"]);
+          setCurrentPlayerInAction(all_cards["currentActivePlayer"]);
+          if(all_cards["currentActivePlayerNumber"]===playerIdentity)
+          setCurrentPlayerInAction("You're in Action Please Respond :)");
+          setMy_cards([])    
           const my_card = Object.entries(all_cards).filter(([key, val]) => {
               return key === playerIdentity
             }
@@ -90,6 +97,21 @@ function App() {
 
 
 
+
+  // let reset=()=> {
+  //   setTimeCount(0);
+  // }
+
+  // useEffect(() => {
+  //   let interval = null;
+  //     interval = setInterval(() => {
+  //       setTimeCount(seconds => seconds - 1);
+  //     }, 1000);
+  //     if(timeCount===0)
+  //     clearInterval(interval)
+
+  //   return () => clearInterval(interval);
+  // }, [timeCount]);
 
 
   let getIconContent = (alpha, index, isIcon) => {
@@ -122,6 +144,9 @@ function App() {
     setCard_to_throw(card_to_be_thrown)
     return card_to_be_thrown;
   }
+
+  // useEffect(() => {
+  // }, [timeCount])
 
   let toggleCardSelection = (cardToToggleStatus) => {
     let isSelectedCard = false;
@@ -157,6 +182,9 @@ function App() {
 
 
   let throwCardsfn = () => {
+    setUserInput({
+      ["status"]: "start"
+    })
     const card_to_be_thrown = helperFnToThrowCard();
     const create_throwObject = {
       ...{
@@ -168,13 +196,14 @@ function App() {
         "thrown_cards": card_to_be_thrown
       },
       ...{
-        "claiming": `${card_to_throw.length}_${userInput.claimedCard}`
+        "claiming": `${card_to_throw.length}_${userInput.claimedCard.value}`
       },
       ...{"userName":`${userInput.userName}`}
     }
     // console.log("create_throwObject ************** ",create_throwObject);
     setCard_to_throw([])
     socket.current.send(JSON.stringify(create_throwObject));
+    setUserInput({["claimedCard"]:{}});
   }
 
 
@@ -199,23 +228,53 @@ function App() {
 
   }
 
+  let handlePass=()=>{
+    socket.current.send(`{"action": "pass","playerNumber":"${playerIdentity}","userType":"user","userName":"${userInput.userName}"}`);
+  }
+
 
   const handleChange = evt => {
+    console.log("select tag testing   ===>",evt)
+    if(evt.target!=undefined){
     const name = evt.target.name;
     const newValue = evt.target.value;
     setUserInput({
       [name]: newValue
     });
+    }else{
+      setUserInput({
+        ["claimedCard"]: {value:evt.value,label:evt.value}
+      })
+    }
   }
 
-  
+  const arrObj=[
+    {value:'KING',label:'KING'},
+    {value:'QUEEN',label:'QUEEN'},
+    {value:'JACK',label:'JACK'},
+    {value:'10',label:'10'},
+    {value:'9',label:'9'},
+    {value:'8',label:'8'},
+    {value:'7',label:'7'},
+    {value:'6',label:'6'},
+    {value:'5',label:'5'},
+    {value:'4',label:'4'},
+    {value:'3',label:'3'},
+    {value:'2',label:'2'},
+    {value:'ACE',label:'ACE'}]
+
+  const isThisYourAction =currentPlayerInAction.includes("You're in Action Please Respond");
 return (  
   <div className="App">
     <h3>Hello</h3>
+    {isThisYourAction?<h2 className="blinking">{currentPlayerInAction}</h2>:<h2 className="blinkingGreen">{currentPlayerInAction}</h2>}
+    
+    {/* <p className="addIner blinking">{error[element.textfield]} </p> */}
+    {/* <h3>{timeCount}</h3> */}
       {my_cards.length===0 && userInput.status==="ready_to_go" ?<h3>You are Ready to go...!! Admin is about to start the game and cards will appear in seconds</h3>:null}
       {my_cards.length===0 && userInput.status!=="ready_to_go"?
       <div className="a">
-      <input type="text" value={userInput.userName} name="userName" onChange={handleChange}></input>
+      <input type="text" placeholder="Enter your Name" value={userInput.userName} name="userName" onChange={handleChange}></input>
       <button onClick={()=>authenticateAdmin()}>submit</button>
       </div>
       :null}
@@ -243,13 +302,34 @@ return (
       </ul>
 		</div>
     {my_cards.length!=0?(
-    <div className="a">
+    <div className="mt-3">
       <label>Claim to throw card</label>
       {card_to_throw.length!==0?<h3>Total card selected {card_to_throw.length}</h3>:null}
-      <input type="text" value={userInput.claimedCard} name="claimedCard" onChange={handleChange}></input>
-      {card_to_throw.length!==0?<button onClick={()=>throwCardsfn()}>Throw</button>:null}
+        
+        <Select
+          className="adjustWidthForMultiSelect"
+          name="claimedCard"
+          // value={[userInput.claimedCard]}
+          placeholder="Select an option to claim card that you are throwing (You could bluff also)"
+          options={arrObj}
+          onChange={(options) => {
+            handleChange(options)
+            // handleMultiChange(options, element.textfield);
+            // handleChangeForOutput(options, element.textfield);
+          }}
+          isSearchable={true}
+        />
+      {card_to_throw.length!==0 && userInput.claimedCard.value!==undefined && userInput.claimedCard.value!==""?<button disabled={!isThisYourAction} onClick={()=>throwCardsfn()}>Throw</button>:null}
+{currentPlayerInAction ?
+
+  <button disabled={!isThisYourAction} onClick={handlePass}>PASS</button>
+:null
+}
+    {currentPlayerInAction?
     
-    <button onClick={()=>pickCards()}>Pick cards</button>
+    <button disabled={!isThisYourAction} onClick={()=>pickCards()}>Pick cards</button>
+  :
+  null}
     </div>
     ):null}
     </div>

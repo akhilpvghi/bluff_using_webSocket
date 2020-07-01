@@ -1,0 +1,50 @@
+while picking cards 
+
+=====>data that we send
+{"action": "pick_cards","playerNumber":"${playerIdentity}","userType":"user","userName":"${userInput.userName}"}`);
+
+_______________________________________________________________________________________________________________________
+
+while throwing cards 
+
+=====>data that we send
+
+{
+        "action": "throw_card",
+        "playerNumber": `${playerIdentity}`,
+        "userType": "user"
+      },
+      {
+        "thrown_cards": card_to_be_thrown
+      },
+      {
+        "claiming": `${card_to_throw.length}_${userInput.claimedCard.value}`
+      },
+      {"userName":`${userInput.userName}`}
+
+
+
+_______________________________________________________________________________________________________________________
+
+while authentication
+
+authenticateAdmin() that we call from client
+
+=====>data that we send
+
+
+{"action": "plus","playerNumber":"${playerIdentity}","userType":"admin","userName":"Akhil"}
+
+OR
+
+{"action": "plus","playerNumber":"${playerIdentity}","userType":"user","userName":"${userInput.userName}"}
+        
+
+
+
+_______________________________________________________________________________________________________________________
+
+parameter that we usually pass from backend
+
+serverMessageFromBluff ===>indicates action like who has thrown or picked cards
+currntActivePlayer  ===>  indicates which player is in action

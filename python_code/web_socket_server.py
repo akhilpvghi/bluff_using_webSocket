@@ -7,7 +7,7 @@ from bluff_python import bluff
 logging.basicConfig()
 
 STATE = {"value": 0}
-
+playerDictionaryWithNames={}
 USERS = set()
 
 
@@ -56,13 +56,17 @@ async def throw_cards(data,bluffw):
     bluffw.last_player_name_throw_record = userName
     for k in data["thrown_cards"]:
         print("thrown cards {}".format(k))
-    result=bluffw.throw_cards(data["playerNumber"],data["thrown_cards"],data["claiming"],data["userName"])
+    result=bluffw.throw_cards(data["playerNumber"],data["thrown_cards"],data["claiming"],data["userName"],playerDictionaryWithNames)
     await send_cards_to_client(result)
     #print("result from tx bluff {}".format(result))   
 	
 async def pick_cards(data,bluffw):
-    result=bluffw.pick_cards_from_mat(data["playerNumber"],data["userName"])
+    result=bluffw.pick_cards_from_mat(data["playerNumber"],data["userName"],playerDictionaryWithNames)
     #print("pick_cards card calledd {}".format(result))
+    await send_cards_to_client(result)
+
+async def handlePass(data,bluffw):
+    result=bluffw.handlePass(data["playerNumber"],data["userName"],playerDictionaryWithNames)
     await send_cards_to_client(result)
 
 
@@ -78,19 +82,30 @@ async def counter(websocket, path):
             if data["action"] == "minus":
                 STATE["value"] -= 1
                 await notify_state()
+            elif data["action"] == "plus" and data["userType"]=="user":
+                playerDictionaryWithNames.update({str(data["playerNumber"]):data["userName"]})
             elif data["action"] == "plus" and data["userType"]=="admin":
+                playerDictionaryWithNames.update({str(data["playerNumber"]):data["userName"]})
                 bluffw = bluff(len(USERS))
                 STATE["value"] += 1
-                await distribute_cards(bluffw)
-                await notify_state()
+                if data["no_of_deck"]!='undefined':
+                    no_of_deck=int(data["no_of_deck"])
+                else:
+                    no_of_deck=1
+                await distribute_cards(bluffw, no_of_deck)
+                # await notify_state()
             elif data["action"] == "throw_card":
                 await throw_cards(data,bluffw)
+            elif data["action"] == "pass":
+                await handlePass(data,bluffw)
             elif data["action"] == "pick_cards":
                 await pick_cards(data,bluffw)
 
             else:
                 logging.error("unsupported event: {}".format(data))
                 #print("data------------> {}".format(data))
+    # except:
+    #     print("error")
     finally:
         print("hello")
         #await unregister(websocket)
@@ -100,10 +115,9 @@ async def counter(websocket, path):
 
 
 	
-async def distribute_cards(bluffw):
-    no_of_deck=1
+async def distribute_cards(bluffw,no_of_deck):
     bluffw.shuffle_cards_fn(no_of_deck)
-    get_card_distribution_to_player = bluffw.card_distribution_to_player()
+    get_card_distribution_to_player = bluffw.card_distribution_to_player(playerDictionaryWithNames)
     await send_cards_to_client(get_card_distribution_to_player)
 
 
