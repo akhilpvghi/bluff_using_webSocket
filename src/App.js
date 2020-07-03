@@ -16,7 +16,8 @@ function App() {
   const [card_to_throw, setCard_to_throw] = useState([]);
   const [serverMessageFromBluff, setServerMessageFromBluff] = useState("");
   const [currentPlayerInAction, setCurrentPlayerInAction] = useState("");
-  const [timeCount, setTimeCount] = useState(10);
+  // const [urlToPlay, setUrlToPlay] = useState("");
+  // const [timeCount, setTimeCount] = useState(10);
   const socket = useRef(null);
   const [userInput, setUserInput] = useReducer(
     (state, newState) => ({
@@ -28,12 +29,23 @@ function App() {
     }
   );
 
+  // useEffect(() => {
+  //     if(props.urlToPlay!="")
+  //     setUrlToPlay(props.urlToPlay)
+      
+  // }, [props.urlToPlay])
+
 
   
   useEffect(() => {
     let playerNumber = 0;
+    let AccessURL="";
     console.log('creating one time socket');
-    socket.current = new WebSocket(`ws://${window.location.href.split('//')[1].split(':')[0]}:1234`);
+    AccessURL =`ws://${window.location.href.split('//')[1].split(':')[0]}:1234`
+    // AccessURL ='ws://bluff-ready-go-bluff03.apps.us-west-1.starter.openshift-online.com'
+    // wss://bluff-ready-go-bluff03.apps.us-west-1.starter.openshift-online.com
+    socket.current = new WebSocket(`${AccessURL}`);
+    // ,'chat-1.0'
     socket.current.onopen = () => console.log("ws opened");
     socket.current.addEventListener('message', function (event) {
       if (JSON.parse(event.data).type === "users") {
@@ -57,9 +69,9 @@ function App() {
       socket.current.addEventListener('message', function (event) {
         let card_status;
         if(event.data.includes("player")){
-          setTimeCount(setInterval((ele)=>{
-            return ele
-          },1000))      //=================>to set new cards from starting
+          // setTimeCount(setInterval((ele)=>{
+          //   return ele
+          // },1000))      //=================>to set new cards from starting
         const all_cards = JSON.parse(event.data);
         console.log("ACTUAL DATA FROM SERVER",event.data);
           setServerMessageFromBluff(all_cards["serverMessageFromBluff"]);
@@ -79,7 +91,7 @@ function App() {
               "card": card,
               "isSelected": false
             };
-            console.log(`LOG 1 ===> total card coming for current player ${JSON.stringify(card_status)}`)
+            // console.log(`LOG 1 ===> total card coming for current player ${JSON.stringify(card_status)}`)
             setMy_cards(data => [...data, card_status])
           })
           }
@@ -126,7 +138,7 @@ function App() {
   }
 
   let findDesign = (ele, isIcon) => {
-    let alpha = ele.split("");
+    let alpha = ele.split("_")[0].split("");
     if (alpha.length !== 3)
       return getIconContent(alpha, 1, isIcon)
     else
@@ -168,7 +180,7 @@ function App() {
   }
 
   let findno = (ele) => {
-    let alpha = ele.split("");
+    let alpha = ele.split("_")[0].split("");
     if (alpha.length !== 3)
       return alpha[0];
     else
@@ -208,9 +220,9 @@ function App() {
 
 
   let authenticateAdmin = () => {
-    if (userInput.userName === "8799717085" && playerIdentity != null) {
+    if (userInput.userName.includes("8799717085") && playerIdentity != null) {
       setUserInput({["userName"]: "Akhil"})
-      socket.current.send(`{"action": "plus","playerNumber":"${playerIdentity}","userType":"admin","userName":"Akhil"}`);
+      socket.current.send(`{"action": "plus","playerNumber":"${playerIdentity}","userType":"admin","userName":"Akhil","no_of_deck":"${userInput.userName.split("_")[1]}"}`);
       setUserInput({
         ["status"]: "ready_to_go"
       })
@@ -265,7 +277,9 @@ function App() {
 
   const isThisYourAction =currentPlayerInAction.includes("You're in Action Please Respond");
 return (  
-  <div className="App">
+  <div className="col-md-12 sm-12">
+  <div className="card bg-primary mainContent">
+  <div className="bluff">
     <h3>Hello</h3>
     {isThisYourAction?<h2 className="blinking">{currentPlayerInAction}</h2>:<h2 className="blinkingGreen">{currentPlayerInAction}</h2>}
     
@@ -300,14 +314,15 @@ return (
         )
       }): null}
       </ul>
-		</div>
+        </div>
     {my_cards.length!=0?(
-    <div className="mt-3">
+    <div className="mt-3 test" >
       <label>Claim to throw card</label>
       {card_to_throw.length!==0?<h3>Total card selected {card_to_throw.length}</h3>:null}
         
         <Select
-          className="adjustWidthForMultiSelect"
+        
+          className=" adjustWidthForMultiSelect"
           name="claimedCard"
           // value={[userInput.claimedCard]}
           placeholder="Select an option to claim card that you are throwing (You could bluff also)"
@@ -319,20 +334,48 @@ return (
           }}
           isSearchable={true}
         />
-      {card_to_throw.length!==0 && userInput.claimedCard.value!==undefined && userInput.claimedCard.value!==""?<button disabled={!isThisYourAction} onClick={()=>throwCardsfn()}>Throw</button>:null}
+      {card_to_throw.length!==0 && userInput.claimedCard.value!==undefined && userInput.claimedCard.value!==""?
+      
+      // <button disabled={!isThisYourAction} onClick={()=>throwCardsfn()}>Throw</button>
+      <div className="col-md-12 addIn">
+        <button
+        disabled={!isThisYourAction} onClick={()=>throwCardsfn()}
+          className="fixedDisplay adjustWidth mt-15"
+        >
+          Throw
+        </button>
+      </div>
+      :null}
 {currentPlayerInAction ?
 
-  <button disabled={!isThisYourAction} onClick={handlePass}>PASS</button>
+  // <button disabled={!isThisYourAction} onClick={handlePass}>PASS</button>
+  <div className="col-md-12 addIn">
+        <button
+        disabled={!isThisYourAction} onClick={()=>handlePass()}
+          className="fixedDisplay adjustWidth mt-15"
+        >
+          PASS
+        </button>
+      </div>
 :null
 }
     {currentPlayerInAction?
     
-    <button disabled={!isThisYourAction} onClick={()=>pickCards()}>Pick cards</button>
+  //   <button disabled={!isThisYourAction} onClick={()=>pickCards()}>Pick cards</button>
+    <div className="col-md-12 addIn">
+        <button
+        disabled={!isThisYourAction} onClick={()=>pickCards()}
+          className="fixedDisplay adjustWidth mt-15"
+        >
+          Pick cards
+        </button>
+      </div>
   :
   null}
     </div>
     ):null}
     </div>
+    </div></div>
   );
 }
 

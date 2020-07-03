@@ -27,3 +27,10 @@
 .App-link {
   color: #09d3ac;
 }
+
+
+.bluff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
