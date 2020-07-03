@@ -41,8 +41,8 @@ function App() {
     let playerNumber = 0;
     let AccessURL="";
     console.log('creating one time socket');
-    AccessURL =`ws://${window.location.href.split('//')[1].split(':')[0]}:1234`
-    // AccessURL ='ws://bluff-ready-go-bluff03.apps.us-west-1.starter.openshift-online.com'
+    // AccessURL =`ws://${window.location.href.split('//')[1].split(':')[0]}:1234`
+    AccessURL ='ws://open-shift-testing-bluff-backend.apps.us-west-1.starter.openshift-online.com';
     // wss://bluff-ready-go-bluff03.apps.us-west-1.starter.openshift-online.com
     socket.current = new WebSocket(`${AccessURL}`);
     // ,'chat-1.0'

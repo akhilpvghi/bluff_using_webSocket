@@ -9,8 +9,9 @@
     "react-select": "^3.1.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "webpack",
+    "postinstall": "npm run build",
+    "start": "node bin/www",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
