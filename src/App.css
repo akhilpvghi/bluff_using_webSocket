@@ -34,3 +34,21 @@
   flex-direction: column;
   align-items: center;
 }
+
+.adjustWidth {
+  width: 85%;
+  margin-top: -10px;
+  /* margin-bottom: 15px; */
+  border-radius: 50PX;
+  height: 41px;
+  padding-left: 11px;
+  border: 1px solid grey;
+}
+
+button.fixedDisplay.adjustWidth.mt-15 {
+  margin-top: 15px;
+  border-radius: 50PX;
+  height: 41px;
+  padding-left: 11px;
+}
+
